@@ -5,10 +5,11 @@
  */
 
 const app = require('../app');
-const socketController = require('../controllers/SocketController');
 const debug = require('debug')('drawnite-api:server');
 const http = require('http');
+
 const io = require('socket.io')();
+const socketController = require('../controllers/socket');
 
 /**
  * Get port from environment and store in Express.
@@ -23,8 +24,6 @@ app.set('port', port);
 
 const server = http.createServer(app);
 
-io.on('connection', socketController.socketOnConnection);
-
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -33,6 +32,8 @@ io.listen(server);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+io.on('connection', socketController.socketOnConnection);
 
 /**
  * Normalize a port into a number, string, or false.

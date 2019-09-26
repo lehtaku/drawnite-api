@@ -4,6 +4,9 @@ Icon?
 ._*
 .idea/
 
+# Configuration
+.env
+
 # npm
 node_modules
 package-lock.json
