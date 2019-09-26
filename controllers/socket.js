@@ -1,8 +1,12 @@
 const www = require('../bin/www');
 const gameService = require('../services/game');
 
+let gameId = '';
+
 const socketOnConnection = (socket) => {
-    socket.join(socket.handshake.query.token);
+    gameId = socket.handshake.query.token;
+
+    socket.join(gameId);
 
     socket.emit('ask-name', 'You\'r name?', (answer) => {
         socket.name = answer;
@@ -16,51 +20,54 @@ const socketOnConnection = (socket) => {
 };
 
 const newPlayer = (socket) => {
-    const gameId = socket.handshake.query.token;
-        gameService.addPlayer(gameId, socket.id, socket.name)
-            .subscribe(game => {
-                if (game) {
-                    www.io.to(gameId).emit('players-changed', game.players);
-                    socket.to(gameId)
-                        .emit('player-connected', socket.name)
-                        .emit('new-settings', game.settings);
-                }
-            });
-};
-
-const socketDisconnected = (socket) => {
-    const gameId = socket.handshake.query.token;
-    gameService.removePlayer(gameId, socket.id)
-        .subscribe(players => {
-            www.io.to(gameId).emit('players-changed', players);
-            socket.to(gameId).emit('player-disconnected', socket.name)
+    gameService.addPlayer(gameId, socket.id, socket.name)
+        .then(res => {
+            let playerName = res.players[res.players.length - 1].name;
+            if (!socket.name) socket.name = playerName;
+            www.io.to(gameId).emit('players-changed', res.players);
+            socket.to(gameId)
+                .emit('player-connected', playerName)
+                .emit('new-settings', res.settings);
+        })
+        .catch(err => {
+            // TODO: Error handling
+            console.log(err);
         });
 };
 
+const socketDisconnected = (socket) => {
+    gameService.removePlayer(gameId, socket.id)
+        .then(res => {
+            www.io.to(gameId).emit('players-changed', res.players);
+            socket.to(gameId).emit('player-disconnected', socket.name)
+        })
+        .catch(err => {
+            // TODO: Error handling
+            console.log(err);
+        })
+};
+
 const newMessage = (msg, socket) => {
-    const gameId = socket.handshake.query.token;
     www.io.to(gameId).emit('chat-message', {
         sender: socket.name,
         text: msg
     })
 };
 
-const settingsChanged = (settings, socket) => {
-    const gameId = socket.handshake.query.token;
+const settingsChanged = (settings) => {
     gameService.saveSettings(gameId, settings)
-        .subscribe(settings => {
-            www.io.to(gameId).emit('new-settings', settings);
+        .then(res => {
+            www.io.to(gameId).emit('new-settings', res.settings);
+        })
+        .catch(err => {
+            // TODO: Error handling
+            console.log(err);
         })
 };
 
-const changeGameState = (state, socket) => {
-    const gameId = socket.handshake.query.token;
-    const newState = !state;
-    console.log('Change Gamestate called');
-    gameService.saveGameState(gameId, newState)
-        .subscribe(state => {
-            www.io.to(gameId).emit('state-changed', state);
-        })
+const changeGameState = (state) => {
+    gameService.saveGameState(gameId, !state)
+        .then(state => www.io.to(gameId).emit('state-changed', state));
 };
 
 module.exports = {

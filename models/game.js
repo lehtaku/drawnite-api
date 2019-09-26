@@ -10,7 +10,9 @@ const gameSchema = new mongoose.Schema({
     players: [
         {
             socket_id: String,
-            name: String
+            name: String,
+            score: Number,
+            drawing: Boolean
         }
     ],
     messages: [
