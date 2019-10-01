@@ -6,6 +6,7 @@ const saveGameToDb = async () => {
         const newGame = await new Game({
             created: Date.now(),
             gameOn: false,
+            drawerSocket: null,
             settings: {
                 rounds: 3,
                 drawTime: 60
@@ -37,7 +38,8 @@ const saveSettings = async (gameId, settings) => {
 };
 
 const saveGameState = async (gameId, state) => {
-    return Game.findByIdAndUpdate(gameId, { gameOn: state }, { new: true });
+    const game = await Game.findById(gameId);
+    return Game.findByIdAndUpdate(gameId, { gameOn: state, drawerSocket: game.players[0].socket_id}, { new: true });
 };
 
 const addPlayer = async (gameId, socketId, name) => {

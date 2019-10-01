@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const gameSchema = new mongoose.Schema({
     created: Date,
     gameOn: Boolean,
+    drawerSocket: String,
     settings: {
         rounds: Number,
         drawTime: Number
@@ -12,7 +13,6 @@ const gameSchema = new mongoose.Schema({
             socket_id: String,
             name: String,
             score: Number,
-            drawing: Boolean
         }
     ],
     messages: [
